@@ -24,6 +24,11 @@ app.stage.addChild(player);
 app.ticker.add((delta) => {
   player.x += player.dirX * player.speed * delta;
   player.y += player.dirY * player.speed * delta;
+  
+  let pointerPos = undefined;
+  let dir = -Math.atan2(player.x - pointerPos.x, player.y - pointerPos.y);
+  player.rotation = dir;
+  
 });
 
 const left = keyboard('q'),
@@ -114,15 +119,15 @@ function keyboard(value) {
 }
 
 app.stage.interactive = true;
-app.stage.on('pointermove', changePlayerDirection);
+//app.stage.on('pointermove', changePlayerDirection);
 
 app.stage.on('click', fire);
-
+/*
 function changePlayerDirection(event) {
   let pointerPos = event.data.global;
   let dir = -Math.atan2(player.x - pointerPos.x, player.y - pointerPos.y);
   player.rotation = dir;
-}
+}*/
 
 function fire(event) {
   let pointerPos = event.data.global;
