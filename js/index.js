@@ -1,48 +1,68 @@
-import * as PIXI from '../node_modules/pixi.js/dist/browser/pixi.mjs';
+import * as PIXI from 'pixi.js';
 
 PIXI.utils.skipHello();
 
-let app = new PIXI.Application({backgroundColor: 0x123456, resizeTo: window});
-
 let gameContainer = document.querySelector("#game-container");
+let app = new PIXI.Application({backgroundColor: 0x123456, resizeTo: window});
 
 gameContainer.appendChild(app.view);
 
 let player = PIXI.Sprite.from('img/sample.png');
+let bullets = new PIXI.Container();
 
 {
   player.anchor.set(0.5);
-  player.speed = 5;
+  player.speed = 10;
   player.dirX = 0;
   player.dirY = 0;
   player.x = app.view.width / 2;
   player.y = app.view.height / 2;
+  player.lookAt = new PIXI.Point(app.view.width / 2, 0);
 };
 
 app.stage.addChild(player);
+app.stage.addChild(bullets);
 
-app.ticker.add((delta) => {
+app.ticker.add(gameLoop);
+
+function gameLoop(delta) {
   player.x += player.dirX * player.speed * delta;
   player.y += player.dirY * player.speed * delta;
   
-  let pointerPos = undefined;
+  let pointerPos = player.lookAt;
   let dir = -Math.atan2(player.x - pointerPos.x, player.y - pointerPos.y);
   player.rotation = dir;
-});
+}
+
+app.ticker.add(updateBullets);
+
+function updateBullets(delta) {
+  for (let bullet of bullets.children) {
+    bullet.x += Math.cos(bullet.direction) * bullet.speed * delta;
+    bullet.y += Math.sin(bullet.direction) * bullet.speed * delta;
+    
+    if(Math.sqrt(Math.pow(bullet.x - bullet.startX, 2) + Math.pow(bullet.y - bullet.startY, 2)) >= bullet.maxRange){
+      bullets.removeChild(bullet);
+    }
+  }
+}
 
 const left = keyboard('q'),
   right = keyboard('d'),
   up = keyboard('z'),
-  down = keyboard('s');
+  down = keyboard('s'),
+  test = keyboard('t');
+  
+test.press = () => {
+  console.log(bullets.children);
+};
 
 left.press = () => {
   player.dirX = -1;
 };
   
 left.release = () => {
-  if(right.isUp){
-    player.dirX = 0;
-  }
+  player.dirX = right.isDown ? 1 : 0;
 };
   
 right.press = () => {
@@ -50,9 +70,7 @@ right.press = () => {
 };
 
 right.release = () => {
-  if(left.isUp){
-    player.dirX = 0;
-  }
+  player.dirX = left.isDown ? -1 : 0;
 };
 
 up.press = () => {
@@ -60,9 +78,7 @@ up.press = () => {
 };
 
 up.release = () => {
-  if(down.isUp){
-    player.dirY = 0;
-  }
+  player.dirY = down.isDown ? 1 : 0;
 };
 
 down.press = () => {
@@ -70,18 +86,17 @@ down.press = () => {
 };
 
 down.release = () => {
-  if(up.isUp){
-    player.dirY = 0;
-  }
+  player.dirY = up.isDown ? -1 : 0;
 };
   
 function keyboard(value) {
-  const key = {};
-  key.value = value;
-  key.isDown = false;
-  key.isUp = true;
-  key.press = undefined;
-  key.release = undefined;
+  const key = {
+    value: value,
+    isDown: false,
+    isUp: true,
+    press: undefined,
+    release: undefined
+  };
   key.downHandler = (event) => {
     if (event.key === key.value) {
       if (key.isUp && key.press) {
@@ -118,19 +133,33 @@ function keyboard(value) {
 }
 
 app.stage.interactive = true;
-//app.stage.on('pointermove', changePlayerDirection);
+app.stage.on('pointermove', changePlayerDirection);
 
-app.stage.on('click', fire);
-/*
+gameContainer.addEventListener('pointerdown', fire);
+
 function changePlayerDirection(event) {
-  let pointerPos = event.data.global;
-  let dir = -Math.atan2(player.x - pointerPos.x, player.y - pointerPos.y);
-  player.rotation = dir;
-}*/
+  player.lookAt = event.data.global;
+}
 
 function fire(event) {
-  let pointerPos = event.data.global;
-  let dir = -Math.atan2(player.x - pointerPos.x, player.y - pointerPos.y);
+  let bullet = createBullet(player.x, player.y, player.lookAt);
   
+  bullets.addChild(bullet);
+}
+
+function createBullet(startX, startY, to){
   let bullet = PIXI.Sprite.from('img/sample.png');
+  
+  bullet.scale.set(0.15);
+  bullet.anchor.set(0.5);
+  bullet.speed = 10;
+  bullet.maxRange = 1000;
+  bullet.startX = startX;
+  bullet.startY = startY;
+  bullet.x = startX;
+  bullet.y = startY;
+  bullet.direction = Math.atan2(to.y - startY, to.x - startX);
+  bullet.rotation = -Math.atan2(startX - to.x, startY - to.y);
+  
+  return bullet;
 }
