@@ -1,4 +1,4 @@
-import * as PIXI from 'pixi.js';
+import * as PIXI from '../node_modules/pixi.js/dist/browser/pixi.mjs';
 
 PIXI.utils.skipHello();
 
