@@ -28,7 +28,6 @@ app.ticker.add((delta) => {
   let pointerPos = undefined;
   let dir = -Math.atan2(player.x - pointerPos.x, player.y - pointerPos.y);
   player.rotation = dir;
-  
 });
 
 const left = keyboard('q'),
