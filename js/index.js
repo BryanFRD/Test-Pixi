@@ -21,6 +21,11 @@ let player = PIXI.Sprite.from('img/sample.png');
 
 app.stage.addChild(player);
 
+app.ticker.add((delta) => {
+  player.x += player.dirX * player.speed * delta;
+  player.y += player.dirY * player.speed * delta;
+});
+
 const left = keyboard('q'),
   right = keyboard('d'),
   up = keyboard('z'),
@@ -111,13 +116,17 @@ function keyboard(value) {
 app.stage.interactive = true;
 app.stage.on('pointermove', changePlayerDirection);
 
+app.stage.on('click', fire);
+
 function changePlayerDirection(event) {
   let pointerPos = event.data.global;
   let dir = -Math.atan2(player.x - pointerPos.x, player.y - pointerPos.y);
   player.rotation = dir;
 }
 
-app.ticker.add((delta) => {
-  player.x += player.dirX * player.speed * delta;
-  player.y += player.dirY * player.speed * delta;
-});
+function fire(event) {
+  let pointerPos = event.data.global;
+  let dir = -Math.atan2(player.x - pointerPos.x, player.y - pointerPos.y);
+  
+  let bullet = PIXI.Sprite.from('img/sample.png');
+}
