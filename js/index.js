@@ -40,14 +40,27 @@ function gameLoop(delta) {
 app.ticker.add(updateEnemies);
 
 function updateEnemies(delta) {
-  for(let enemy of enemies.children){
-    let x = enemy.x, y = enemy.y;
+  for(let enemyContainer of enemies.children){
+    let hpBarBehind = enemyContainer.children[0];
+    let hpBar = enemyContainer.children[1];
+    let enemy = enemyContainer.children[2];
+    
+    if(enemy.health == 0){
+      enemies.removeChild(enemyContainer);
+      continue;
+    }
+    
+    let currentHp = enemy.health * 100 / enemy.maxHealth;
+    
+    hpBar.width = hpBarBehind.width * currentHp / 100;
+    
+    let x = enemyContainer.x, y = enemyContainer.y;
     let fx = enemy.follow.x, fy = enemy.follow.y;
     
     if(Math.sqrt(Math.pow(fx - x, 2) + Math.pow(fy - y, 2)) >= 100) {
       let dir = Math.atan2(fy - y, fx - x);
-      enemy.x += Math.cos(dir) * enemy.speed * delta;
-      enemy.y += Math.sin(dir) * enemy.speed * delta;
+      enemyContainer.x += Math.cos(dir) * enemy.speed * delta;
+      enemyContainer.y += Math.sin(dir) * enemy.speed * delta;
     }
     
     enemy.rotation = -Math.atan2(x - fx, y - fy);
@@ -75,7 +88,7 @@ const left = keyboard('q'),
   spawnEnemy = keyboard('b');
   
 test.press = () => {
-  
+  enemies.children[0].children[2].health -= 5;
 };
 
 spawnEnemy.press = () => {
@@ -209,16 +222,36 @@ function createBullet(startX, startY, to){
 }
 
 function createEnemy() {
+  let enemyContainer = new PIXI.Container();
+  
   let enemy = PIXI.Sprite.from('img/enemy.png');
   
-  enemy.scale.set(0.5);
-  enemy.x = Math.floor(Math.random() * app.view.width);
-  enemy.y = Math.floor(Math.random() * app.view.height);
+  enemyContainer.x = Math.floor(Math.random() * app.view.width);
+  enemyContainer.y = Math.floor(Math.random() * app.view.height);
   
+  enemy.scale.set(0.5);
   enemy.follow = player;
   enemy.speed = 5;
   enemy.anchor.set(0.5);
   enemy.lookAt = player.position;
+  enemy.maxHealth = 50
+  enemy.health = 50;
   
-  return enemy;
+  let hpBar = new PIXI.Graphics();
+  
+  hpBar.beginFill(0xDD2525);
+  hpBar.drawRoundedRect(-75/2, -70, 75, 10, 15);
+  hpBar.endFill();
+  
+  let hpBarBehind = new PIXI.Graphics();
+  
+  hpBarBehind.beginFill(0x000000);
+  hpBarBehind.drawRoundedRect(-75/2, -70, 75, 10, 15);
+  hpBarBehind.endFill();
+  
+  enemyContainer.addChild(hpBarBehind);
+  enemyContainer.addChild(hpBar);
+  enemyContainer.addChild(enemy);
+  
+  return enemyContainer;
 }
