@@ -142,9 +142,10 @@ function changePlayerDirection(event) {
 }
 
 function fire(event) {
-  let bullet = createBullet(player.x, player.y, player.lookAt);
-  
-  bullets.addChild(bullet);
+  if(event.button == 0){
+    let bullet = createBullet(player.x, player.y, player.lookAt);
+    bullets.addChild(bullet);
+  }
 }
 
 function createBullet(startX, startY, to){
@@ -153,7 +154,7 @@ function createBullet(startX, startY, to){
   bullet.scale.set(0.15);
   bullet.anchor.set(0.5);
   bullet.speed = 10;
-  bullet.maxRange = 1000;
+  bullet.maxRange = 500;
   bullet.startX = startX;
   bullet.startY = startY;
   bullet.x = startX;
