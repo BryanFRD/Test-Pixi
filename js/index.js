@@ -99,7 +99,7 @@ const left = keyboard('q'),
   changeMode = keyboard('p');
   
 test.press = () => {
-  
+  console.log(enemies.children);
 };
 
 spawnEnemy.press = () => {
