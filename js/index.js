@@ -8,10 +8,12 @@ let app = new PIXI.Application({backgroundColor: 0x123456, resizeTo: window});
 gameContainer.appendChild(app.view);
 
 let player = PIXI.Sprite.from('img/sample.png');
+let enemies = new PIXI.Container();
 let bullets = new PIXI.Container();
 
 {
   player.anchor.set(0.5);
+  player.scale.set(0.5)
   player.speed = 10;
   player.dirX = 0;
   player.dirY = 0;
@@ -21,6 +23,7 @@ let bullets = new PIXI.Container();
 };
 
 app.stage.addChild(player);
+app.stage.addChild(enemies);
 app.stage.addChild(bullets);
 
 app.ticker.add(gameLoop);
@@ -32,6 +35,23 @@ function gameLoop(delta) {
   let pointerPos = player.lookAt;
   let dir = -Math.atan2(player.x - pointerPos.x, player.y - pointerPos.y);
   player.rotation = dir;
+}
+
+app.ticker.add(updateEnemies);
+
+function updateEnemies(delta) {
+  for(let enemy of enemies.children){
+    let x = enemy.x, y = enemy.y;
+    let fx = enemy.follow.x, fy = enemy.follow.y;
+    
+    if(Math.sqrt(Math.pow(fx - x, 2) + Math.pow(fy - y, 2)) >= 100) {
+      let dir = Math.atan2(fy - y, fx - x);
+      enemy.x += Math.cos(dir) * enemy.speed * delta;
+      enemy.y += Math.sin(dir) * enemy.speed * delta;
+    }
+    
+    enemy.rotation = -Math.atan2(x - fx, y - fy);
+  }
 }
 
 app.ticker.add(updateBullets);
@@ -51,11 +71,16 @@ const left = keyboard('q'),
   right = keyboard('d'),
   up = keyboard('z'),
   down = keyboard('s'),
-  test = keyboard('t');
+  test = keyboard('t'),
+  spawnEnemy = keyboard('b');
   
 test.press = () => {
-  console.log(bullets.children);
+  
 };
+
+spawnEnemy.press = () => {
+  enemies.addChild(createEnemy());
+}
 
 left.press = () => {
   player.dirX = -1;
@@ -145,16 +170,34 @@ function fire(event) {
   if(event.button == 0){
     let bullet = createBullet(player.x, player.y, player.lookAt);
     bullets.addChild(bullet);
+  } else if(event.button == 3){
+    let count = 0;
+    let intervalId = setInterval(() => {
+      let bullet = createBullet(player.x, player.y, player.lookAt);
+      bullets.addChild(bullet);
+      if(count++ >= 500){
+        clearInterval(intervalId);
+      }
+    }, 1);
+  } else if(event.button == 4){
+    let count = 0;
+    let intervalId = setInterval(() => {
+      let enemy = createEnemy();
+      enemies.addChild(enemy);
+      if(count++ >= 10){
+        clearInterval(intervalId);
+      }
+    }, 100);
   }
 }
 
 function createBullet(startX, startY, to){
   let bullet = PIXI.Sprite.from('img/sample.png');
   
-  bullet.scale.set(0.15);
+  bullet.scale.set(0.05);
   bullet.anchor.set(0.5);
-  bullet.speed = 10;
-  bullet.maxRange = 500;
+  bullet.speed = 50;
+  bullet.maxRange = 1000;
   bullet.startX = startX;
   bullet.startY = startY;
   bullet.x = startX;
@@ -163,4 +206,19 @@ function createBullet(startX, startY, to){
   bullet.rotation = -Math.atan2(startX - to.x, startY - to.y);
   
   return bullet;
+}
+
+function createEnemy() {
+  let enemy = PIXI.Sprite.from('img/enemy.png');
+  
+  enemy.scale.set(0.5);
+  enemy.x = Math.floor(Math.random() * app.view.width);
+  enemy.y = Math.floor(Math.random() * app.view.height);
+  
+  enemy.follow = player;
+  enemy.speed = 5;
+  enemy.anchor.set(0.5);
+  enemy.lookAt = player.position;
+  
+  return enemy;
 }
