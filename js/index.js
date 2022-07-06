@@ -7,7 +7,9 @@ let app = new PIXI.Application({backgroundColor: 0x123456, resizeTo: window});
 
 gameContainer.appendChild(app.view);
 
-let player = PIXI.Sprite.from('img/sample.png');
+let imgLocation = 'img/';
+
+let player = new PIXI.Sprite.from(imgLocation + 'sample.png');
 let enemies = new PIXI.Container();
 let bullets = new PIXI.Container();
 
@@ -45,7 +47,7 @@ function updateEnemies(delta) {
     let hpBar = enemyContainer.children[1];
     let enemy = enemyContainer.children[2];
     
-    if(enemy.health == 0){
+    if(enemy.health <= 0){
       enemies.removeChild(enemyContainer);
       continue;
     }
@@ -63,7 +65,7 @@ function updateEnemies(delta) {
       enemyContainer.y += Math.sin(dir) * enemy.speed * delta;
     }
     
-    enemy.rotation = -Math.atan2(x - fx, y - fy);
+    enemy.rotation += enemy.rotationSpeed * delta;
   }
 }
 
@@ -77,6 +79,14 @@ function updateBullets(delta) {
     if(Math.sqrt(Math.pow(bullet.x - bullet.startX, 2) + Math.pow(bullet.y - bullet.startY, 2)) >= bullet.maxRange){
       bullets.removeChild(bullet);
     }
+    
+    for(let enemyContainer of enemies.children){
+      let enemy = enemyContainer.children[2];
+      if(RectangleHitbox(bullet.getBounds(), enemy.getBounds())){
+        bullets.removeChild(bullet);
+        enemy.health -= bullet.damage;
+      }
+    }
   }
 }
 
@@ -85,10 +95,11 @@ const left = keyboard('q'),
   up = keyboard('z'),
   down = keyboard('s'),
   test = keyboard('t'),
-  spawnEnemy = keyboard('b');
+  spawnEnemy = keyboard('b'),
+  changeMode = keyboard('p');
   
 test.press = () => {
-  enemies.children[0].children[2].health -= 5;
+  
 };
 
 spawnEnemy.press = () => {
@@ -125,6 +136,19 @@ down.press = () => {
 
 down.release = () => {
   player.dirY = up.isDown ? -1 : 0;
+};
+
+let jeanLucMode = false;
+changeMode.press = () => {
+  jeanLucMode = !jeanLucMode;
+  imgLocation = 'img/' + (jeanLucMode ? 'jean-luc/' : '');
+  
+  app.renderer.backgroundColor = jeanLucMode ? 0xDB4BE3 : 0x123456;
+  
+  player.texture = new PIXI.Texture.from(imgLocation + 'sample.png');
+  for(let enemyContainer of enemies.children){
+    enemyContainer.children[2].texture = new PIXI.Texture.from(imgLocation + 'enemy.png');
+  }
 };
   
 function keyboard(value) {
@@ -188,7 +212,7 @@ function fire(event) {
     let intervalId = setInterval(() => {
       let bullet = createBullet(player.x, player.y, player.lookAt);
       bullets.addChild(bullet);
-      if(count++ >= 500){
+      if(count++ >= 100){
         clearInterval(intervalId);
       }
     }, 1);
@@ -205,16 +229,21 @@ function fire(event) {
 }
 
 function createBullet(startX, startY, to){
-  let bullet = PIXI.Sprite.from('img/sample.png');
+  let bullet = new PIXI.Sprite.from(imgLocation + 'sample.png');
   
   bullet.scale.set(0.05);
   bullet.anchor.set(0.5);
+  
   bullet.speed = 50;
   bullet.maxRange = 1000;
+  bullet.damage = 10;
+  
   bullet.startX = startX;
   bullet.startY = startY;
+  
   bullet.x = startX;
   bullet.y = startY;
+  
   bullet.direction = Math.atan2(to.y - startY, to.x - startX);
   bullet.rotation = -Math.atan2(startX - to.x, startY - to.y);
   
@@ -224,7 +253,7 @@ function createBullet(startX, startY, to){
 function createEnemy() {
   let enemyContainer = new PIXI.Container();
   
-  let enemy = PIXI.Sprite.from('img/enemy.png');
+  let enemy = new PIXI.Sprite.from(imgLocation + 'enemy.png');
   
   enemyContainer.x = Math.floor(Math.random() * app.view.width);
   enemyContainer.y = Math.floor(Math.random() * app.view.height);
@@ -233,7 +262,7 @@ function createEnemy() {
   enemy.follow = player;
   enemy.speed = 5;
   enemy.anchor.set(0.5);
-  enemy.lookAt = player.position;
+  enemy.rotationSpeed = Math.random() / 5;
   enemy.maxHealth = 50
   enemy.health = 50;
   
@@ -254,4 +283,8 @@ function createEnemy() {
   enemyContainer.addChild(enemy);
   
   return enemyContainer;
+}
+
+function RectangleHitbox(a, b) {
+  return a.x + a.width > b.x && a.x < b.x + b.width && a.y + a.height > b.y && a.y < b.y + b.height;
 }
